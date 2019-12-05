@@ -1,0 +1,161 @@
+---
+# EMAT RDR Test Scope Definition - based heavily on Road test
+
+scope:
+    name: EMAT RDR Test
+    desc: prototype run
+
+
+inputs:
+
+    free_flow_time:
+        shortname: Free Flow Time
+        ptype: constant
+        desc: Free flow travel time on road segment
+        dtype: float
+        default: 60
+        dist: constant
+        corr: []
+
+    initial_capacity:
+        shortname: Init Capacity
+        ptype: constant
+        desc: Initial capacity on road segment
+        dtype: float
+        default: 100
+        dist: constant
+        corr: []
+
+    alpha:
+        ptype: uncertainty
+        desc: BPR Alpha parameter
+        dtype: float
+        default: 0.15
+        min: 0.10
+        max: 0.20
+        dist: uniform
+        corr: []
+
+    beta:
+        ptype: uncertainty
+        desc: BPR Beta parameter
+        default: 4.0
+        min: 3.5
+        max: 5.5
+        dist: uniform
+        corr: []
+
+    trip_loss_work:
+        shortname: Trip Loss - Work
+        ptype: uncertainty
+        desc: Work trips lost due to flooding
+        default: 500
+        min: 50
+        max: 1000
+        dist: uniform
+        corr: []
+
+    trip_loss_shopping:
+        shortname: Trip Loss - Shopping
+        ptype: uncertainty
+        desc: Shopping trips lost
+        default: 25
+        min: 10
+        max: 2000
+        dist:
+            name: pert
+            peak: 100
+        corr: []
+
+    max_flood_depth:
+        shortname: Max Flood Depth
+        ptype: uncertainty
+        desc: Maximum depth that flooding reaches
+        dtype: float
+        default: 100
+        min: 20
+        max: 200
+        dist:
+            name: triangle
+            peak: 80
+            gamma: 2.5
+        corr: []
+
+    flood_duration:
+        shortname: Flood Duration, days
+        ptype: uncertainty
+        desc: Duration of flood in days
+        dtype: float
+        default: 1
+        min: .1
+        max: 10
+        dist: uniform
+        corr: []
+
+    discounting:
+        shortname: Discounting
+        ptype: policy lever
+        desc: How much to discount
+        dtype: float
+        default: 0.0
+        min: 0
+        max: 100
+
+    analysis_period:
+        shortname: Analysis Period
+        ptype: policy lever
+        desc: Time period over which analysis is conducted, in years
+        dtype: int
+        default: 5
+        min: 1
+        max: 10
+
+    alternatives:
+        shortname: Alternatives
+        desc: Alternatives to the planned project
+        ptype: policy lever
+        dtype: cat
+        default: Planned Project
+        values:
+            - Do nothing
+            - Different sample project
+            - Planned Project
+
+
+outputs:
+
+    no_build_travel_time:
+        shortname: No Build Time
+        kind: info
+        metamodeltype: logxp-linear(-59)
+
+    build_travel_time:
+        shortname: Build Time
+        kind: minimize
+        metamodeltype: logxp-linear(-59)
+
+    time_savings:
+        shortname: Time Savings
+        kind: maximize
+        metamodeltype: log-linear
+
+    value_of_time_savings:
+        shortname: Value Time Save
+        kind: maximize
+        metamodeltype: log-linear
+
+    net_benefits:
+        shortname: Net Benefits
+        kind: maximize
+
+    cost_of_capacity_expansion:
+        shortname: Cost of Expand
+        kind: minimize
+        metamodeltype: log-linear
+
+    present_cost_expansion:
+        shortname: Present Cost
+        kind: info
+        metamodeltype: log-linear
+
+...

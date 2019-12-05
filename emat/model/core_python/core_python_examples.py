@@ -201,3 +201,126 @@ def Road_Capacity_Investment(
         net_benefits = value_of_time_savings + cost_of_capacity_expansion,
     )
 
+def RDR_Demo_Model(
+        # constant
+        free_flow_time=60,
+        initial_capacity=100,
+
+        # uncertainty
+        alpha=0.15,
+        beta=4.0,
+        trip_loss_work=500,
+        trip_loss_shopping=25,
+        max_flood_depth=100,
+        flood_duration=1
+
+
+        # policy
+        discounting=10,
+        analysis_period=2,
+        alternatives='Planned Project'
+
+        **kwargs,
+):
+    """
+    A fictitious example model for road capacity investment.
+
+    This model simulates a capacity expansion investment on a single
+    network link.  The link volume-delay function is governed by the
+    `BPR function <https://en.wikipedia.org/wiki/Route_assignment#Frank-Wolfe_algorithm>`_.
+
+    This model is a bit contrived, because it is designed to explicitly demonstrate
+    a wide variety of EMAT features in a transportation planning model that is as simple
+    as possible.  For example, the policy levers are structured so that there is one
+    of each dtype (float, int, bool, and categorical).
+
+    Args:
+        max_flood_depth
+
+        free_flow_time (float, default 60): The free flow travel time on the link.
+        initial_capacity (float, default 100): The pre-expansion capacity on the link.
+        alpha (float, default 0.15): Alpha parameter to the BPR volume-delay function.
+        beta (float, default 4.0): Beta parameter to the BPR volume-delay function.
+        input_flow (float, default 100): The future input flow on the link.
+        value_of_time (float, default 0.01): The value of a unit of travel time savings
+            per unit of flow on the link.
+        unit_cost_expansion (float, default 1): The present marginal cost of adding one
+            unit of capacity to the link (assumes no economies of scale on expansion cost)
+        interest_rate (float, default 0.03): The interest rate actually incurred for
+            revenue bonds amortized over 15 years.  The interest rate for general obligation
+            bonds is assumed to be 0.0025 less than this value.
+        yield_curve (float, default 0.01): The marginal increase in the interest_rate if
+            the amortization period is 50 years instead of 15.  The yield curve is assumed
+            to be linearly projected to all other possible amortization periods
+        expand_capacity (float, default 10): The amount of capacity expansion actually
+            constructed.
+        amortization_period (int, default 30): The time period over which the construction
+            costs are amortized.
+        interest_rate_lock (bool, default False): Whether interest rates are locked at
+            the assumed current rate of 0.03 / 0.01 or allowed to float.
+        debt_type ('GO Bond', 'Rev Bond', 'Paygo'): Type of financing.  General obligation
+            bonds are assumed to have a lower interest rate than revenue bonds, but
+            may be politically less desirable.  Pay-as-you-go financing incurs no actual
+            interest costs, but requires actually having the funds available.
+        lane_width (float, default 10): The width of lanes on the roadway.  This parameter
+            is intentionally wacky, causing massive congestion for any value other than 10,
+            to demonstrate what might happen with broken model inputs.
+
+    Returns:
+        dict:
+            no_build_travel_time
+                The average travel time on the link if no
+                capacity expansion was constructed.
+            build_travel_time
+                The average travel time on the link after expansion.
+            time_savings
+                The average travel time savings as a result of the
+                expansion.
+            value_of_time_savings
+                The total value of the travel time savings,
+                accounting for the time savings per traveler, the total flow, and
+                the value of time.
+            present_cost_expansion
+                The present cost of building the expansion
+            cost_of_capacity_expansion
+                The annual payment to finance the expansion,
+                when amortized.
+            net_benefits
+                The value of the time savings minus the annual payment.
+
+
+
+    """
+
+    debt_type = debt_type.lower()
+    assert debt_type in ('go bond', 'paygo', 'rev bond')
+
+    average_travel_time0 = free_flow_time * (1 + alpha*(input_flow/initial_capacity)**beta)
+    capacity = initial_capacity + expand_capacity
+    average_travel_time1 = free_flow_time * (1 + alpha*(input_flow/capacity)**beta)
+    average_travel_time1 += (numpy.absolute(lane_width-10)*1000)**0.5
+    travel_time_savings = average_travel_time0 - average_travel_time1
+    value_of_time_savings = value_of_time * travel_time_savings * input_flow
+    present_cost_of_capacity_expansion = unit_cost_expansion * expand_capacity
+
+    if interest_rate_lock:
+        interest_rate = 0.03
+        yield_curve = 0.01
+
+    if (alternatives == 'Do Nothing'):
+        flood_duration += 1
+
+    cost_of_capacity_expansion = numpy.pmt(effective_interest_rate,
+                                           amortization_period,
+                                           present_cost_of_capacity_expansion, )
+
+    return dict(
+        no_build_travel_time=average_travel_time0,
+        build_travel_time=average_travel_time1,
+        time_savings=travel_time_savings,
+        value_of_time_savings=value_of_time_savings,
+        present_cost_expansion=present_cost_of_capacity_expansion,
+        cost_of_capacity_expansion=-cost_of_capacity_expansion,
+        net_benefits = value_of_time_savings + cost_of_capacity_expansion,
+    )
+
